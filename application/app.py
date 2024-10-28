@@ -2,7 +2,7 @@ from flask import Flask
 import sqlite3
 
 app = Flask(__name__)
-#test
+
 # Creates database with all information about user and posts
 def init_db():
     con = sqlite3.connect('blogs.db')
