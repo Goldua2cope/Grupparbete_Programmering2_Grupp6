@@ -11,7 +11,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                    User_ID INTEGER PRIMARY KEY, 
                    USERNAME TEXT NOT NULL,
-                   PASSWORD TEXT NOT NULL
+                   PASSWORD TEXT NOT NULL,
+                   LOGGED_IN BOOLEAN NOT NULL
                    )                  
 ''')
     cursor.execute('''
@@ -31,7 +32,7 @@ def init_db():
                    Post_ID INTEGER NOT NULL,
                    Description TEXT NOT NULL,
                    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                   FOREIGN KEY(Post_ID) REFERENCES posts(Post_ID)
+                   FOREIGN KEY(Post_ID) REFERENCES posts(Post_ID),
                    FOREIGN KEY(User_ID) REFERENCES users(User_ID)
                    )                  
 ''')
@@ -40,6 +41,8 @@ def init_db():
 
 init_db()
 
+# TODO: SKRIVA UT ALLA KOMMENTARER OCKSÅ
+
 @app.route('/', methods=['GET'])
 def home():
     con = sqlite3.connect('blogs.db')
@@ -47,7 +50,10 @@ def home():
     posts = cur.execute('''SELECT Post_title, User_ID, Description, Created_at FROM posts 
                         JOIN users ON posts.User_ID = users.User_ID''').fetchall()
     con.close()
-    return jsonify(dict(posts)), 200
+    return jsonify(posts), 200
+
+# TODO: INLOGGING & SKAPA KONTO
+# TODO: LÄGG TILL CONDITIONS FÖR INLOGGNING HOS ALLA ROUTES
 
 @app.route('/post', methods=['POST'])
 def add_post():
@@ -75,26 +81,25 @@ def delete_post(post_id):
     return jsonify({'Message': 'Your post has been delected.'}), 200
 
 @app.route('/comment', methods=['POST'])
-def add_post():
+def add_comment():
     data = request.get_json()
-    title = data.get('Post_title')
     description = data.get('Description')
 
     con = sqlite3.connect('blogs.db')
     cur = con.cursor()
-    cur.execute('INSERT INTO posts (Post_title, Description) VALUES (?, ?)', (title, description))
+    cur.execute('INSERT INTO comments (Description) VALUES (?, ?)', (description))
     con.commit()
     con.close()
 
-    return jsonify({'Message': 'Your post has been created successfully.'}), 201
+    return jsonify({'Message': 'Your comment has been added.'}), 201
 
 @app.route('/comment', methods=['DELETE'])
-def delete_post():
+def delete_comment():
     data = request.get_json()
-    post_id = data.get('Post-ID')
+    comment_id = data.get('Comment_ID')
 
     con = sqlite3.connect('blogs.db')
     cur = con.cursor()
-    cur.execute('DELETE FROM posts WHERE Post-ID = (?)', (post_id))
+    cur.execute('DELETE FROM posts WHERE Comment_ID = (?)', (comment_id))
     
     return jsonify({'Message': 'Your post has been delected.'}), 200
