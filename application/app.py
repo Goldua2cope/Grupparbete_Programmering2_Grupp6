@@ -1,5 +1,8 @@
 from flask import Flask, jsonify, request
 import sqlite3
+import user
+import posts
+import comments
 
 app = Flask(__name__)
 
@@ -10,14 +13,14 @@ def init_db():
     cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                    User_ID INTEGER PRIMARY KEY, 
-                   USERNAME TEXT NOT NULL,
-                   PASSWORD TEXT NOT NULL,
-                   LOGGED_IN BOOLEAN NOT NULL
+                   Username TEXT NOT NULL UNIQUE,
+                   Password TEXT NOT NULL,
+                   Logged_in INTEGER NOT NULL
                    )                  
 ''')
     cursor.execute('''
             CREATE TABLE IF NOT EXISTS posts (
-                   Post_ID AUTO_INCREMENT PRIMARY KEY,
+                   Post_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                    User_ID INTEGER NOT NULL, 
                    Post_title TEXT NOT NULL,
                    Description TEXT,
@@ -27,7 +30,7 @@ def init_db():
 ''')      
     cursor.execute('''
             CREATE TABLE IF NOT EXISTS comments (
-                   Comment_ID AUTO_INCREMENT PRIMARY KEY,
+                   Comment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                    User_ID INTEGER NOT NULL, 
                    Post_ID INTEGER NOT NULL,
                    Description TEXT NOT NULL,
@@ -39,67 +42,38 @@ def init_db():
     con.commit()
     con.close()
 
-init_db()
-
-# TODO: SKRIVA UT ALLA KOMMENTARER OCKSÅ
-
 @app.route('/', methods=['GET'])
 def home():
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    posts = cur.execute('''SELECT Post_title, User_ID, Description, Created_at FROM posts 
-                        JOIN users ON posts.User_ID = users.User_ID''').fetchall()
-    con.close()
-    return jsonify(posts), 200
+    return posts.home()
 
-# TODO: INLOGGING & SKAPA KONTO
-# TODO: LÄGG TILL CONDITIONS FÖR INLOGGNING HOS ALLA ROUTES
+@app.route('/register', methods=['POST'])
+def register():
+    return user.register()
+
+@app.route('/login', methods=['POST'])
+def login():
+    return user.login()
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    return user.logout()
 
 @app.route('/post', methods=['POST'])
 def add_post():
-    data = request.get_json()
-    title = data.get('Post_title')
-    description = data.get('Description')
-
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    cur.execute('INSERT INTO posts (Post_title, Description) VALUES (?, ?)', (title, description))
-    con.commit()
-    con.close()
-
-    return jsonify({'Message': 'Your post has been created successfully.'}), 201
+    return posts.add_post()
 
 @app.route('/post', methods=['DELETE'])
-def delete_post(post_id):
-    data = request.get_json()
-    post_id = data.get('Post-ID')
-
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    cur.execute('DELETE FROM posts WHERE Post-ID = (?)', (post_id))
-    
-    return jsonify({'Message': 'Your post has been delected.'}), 200
+def delete_post():
+    return posts.delete_post()
 
 @app.route('/comment', methods=['POST'])
 def add_comment():
-    data = request.get_json()
-    description = data.get('Description')
-
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    cur.execute('INSERT INTO comments (Description) VALUES (?, ?)', (description))
-    con.commit()
-    con.close()
-
-    return jsonify({'Message': 'Your comment has been added.'}), 201
+    return comments.add_comment()
 
 @app.route('/comment', methods=['DELETE'])
 def delete_comment():
-    data = request.get_json()
-    comment_id = data.get('Comment_ID')
+    return comments.delete_comment()
 
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    cur.execute('DELETE FROM posts WHERE Comment_ID = (?)', (comment_id))
-    
-    return jsonify({'Message': 'Your post has been delected.'}), 200
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
