@@ -1,46 +1,46 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request ,session 
 import sqlite3
 import user
 import posts
 import comments
 
 app = Flask(__name__)
+app.secret_key = 'gruppuppgiftgrupp6'
 
 # Creates database with all information about user and posts
 def init_db():
-    with sqlite3.connect('blogs.db') as con:
-        cursor = con.cursor()
-        cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    User_ID INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    Username TEXT NOT NULL UNIQUE,
-                    Password TEXT NOT NULL,
-                    Logged_in INTEGER NOT NULL
-        )                  
-    ''')
-        cursor.execute('''
-                CREATE TABLE IF NOT EXISTS posts (
-                    Post_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    User_ID INTEGER NOT NULL, 
-                    Post_title TEXT NOT NULL,
-                    Description TEXT,
-                    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(User_ID) REFERENCES users(User_ID)
-        )                  
-    ''')      
-        cursor.execute('''
-                CREATE TABLE IF NOT EXISTS comments (
-                    Comment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    User_ID INTEGER NOT NULL, 
-                     Post_ID INTEGER NOT NULL,
-                    Description TEXT NOT NULL,
-                    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(Post_ID) REFERENCES posts(Post_ID),
-                    FOREIGN KEY(User_ID) REFERENCES users(User_ID)
-        )                  
-    ''')
+    con = sqlite3.connect('blogs.db')
+    cursor = con.cursor()
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                   User_ID INTEGER PRIMARY KEY AUTOINCREMENT, 
+                   Username TEXT NOT NULL UNIQUE,
+                   Password TEXT NOT NULL
+                   )                  
+''')
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS posts (
+                   Post_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                   User_ID INTEGER NOT NULL, 
+                   Post_title TEXT NOT NULL,
+                   Description TEXT,
+                   Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                   FOREIGN KEY(User_ID) REFERENCES users(User_ID)
+                   )                  
+''')      
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                   Comment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                   User_ID INTEGER NOT NULL, 
+                   Post_ID INTEGER NOT NULL,
+                   Description TEXT NOT NULL,
+                   Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                   FOREIGN KEY(Post_ID) REFERENCES posts(Post_ID),
+                   FOREIGN KEY(User_ID) REFERENCES users(User_ID)
+                   )                  
+''')
     con.commit()
-    
+    con.close()
 
 @app.route('/', methods=['GET'])
 def home():
