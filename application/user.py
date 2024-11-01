@@ -10,15 +10,19 @@ def register():
     username = data.get('Username')
     password = data.get('Password')
 
-    try:
-        with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogs.db') as con:
             cur = con.cursor()
-            cur.execute('''INSERT INTO users (Username, Password) VALUES (? , ?)''', (username, password))
-            con.commit()
-        return jsonify({'Message': 'User successfully created.'}), 201
-    # toDo: error User already exists.
-    except sqlite3.IntegrityError:
-       return jsonify({'Error': 'Invalid data.'}) , 400
+            cur.execute('SELECT * FROM users WHERE Username= ?',(username,))
+            
+            if cur.fetchone():
+                 return jsonify({'Error':'Username already exists.'})
+        
+            try:
+                cur.execute('''INSERT INTO users (Username, Password) VALUES (? , ?)''', (username, password))
+                con.commit()
+                return jsonify({'Message': 'User successfully created.'}), 201
+            except sqlite3.IntegrityError:
+                return jsonify({'Error': 'Invalid data.'}) , 400
 
 # Login 
 
