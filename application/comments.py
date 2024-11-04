@@ -1,46 +1,28 @@
-from flask import jsonify, request
+from flask import jsonify
 import sqlite3
 
-# TODO: ADD CONDITION FOR CHECKING IF POST EXISTS
-
-def add_comment():
-    data = request.get_json()
-    username = data.get('Username')
-    title = data.get('Post_title') # TODO: användbar för tidigare TODO
-    description = data.get('Description')
-    
+def add_comment(post_id, comment_description):
     with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
+        cur.execute('''INSERT INTO comments (Post_ID, Comment_description) 
+                    VALUES (?, ?)''', 
+                    (post_id, comment_description))
+        con.commit()
 
-        cur.execute('''SELECT Logged_in FROM users 
-                    Where Username = ?''', (username,))
-    
-    # If match is a tuple (1,0) which means logged in
-        if cur.fetchone() == (1,):
-            cur.execute('INSERT INTO comments (Description) VALUES (?, ?)', (description))
-            con.commit()
-            return jsonify({'Message': 'Your comment has been added.'}), 201
-        else:
-            return jsonify({'Error': 'You have to be logged in to create a comment.'}), 400
-
-
-# TODO: LÄGG TILL CONDITIONS ATT ANVÄNDAREN BARA FÅ TA BORT SINA COMMENTS OCH OM DEN EXISTERAR
-
-def delete_comment():
-    data = request.get_json()
-    username = data.get('Username')
-    comment_id = data.get('Comment_ID')
-    
+def delete_comment(user_id, comment_id):
     with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
-    
-    
-        cur.execute('''SELECT Logged_in FROM users 
-                    Where Username = ?''', (username,))
-    
-        if cur.fetchone() == (1,):
-            cur.execute('DELETE FROM posts WHERE Comment_ID = (?)', (comment_id))
-            con.commit()
-            return jsonify({'Message': 'Your comment has been delected.'}), 200
-        else:
-            return jsonify({'Error': 'You must be logged in to delete a comments.'})
+        cur.execute('DELETE FROM comments WHERE Comment_ID = ? AND User_ID = ?', 
+                    (comment_id, user_id))
+        con.commit()
+        if cur.rowcount == 0:
+            return False
+    return True
+
+def get_comment_id(comment_description):
+    with sqlite3.connect('blogg_data.db') as con:
+        cur = con.cursor()
+        cur.execute('SELECT Comment_ID FROM comments WHERE Comment_description = ?', 
+                    (comment_description,))
+        return cur.fetchone[0]
+
