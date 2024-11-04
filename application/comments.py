@@ -9,7 +9,7 @@ def add_comment():
     title = data.get('Post_title') # TODO: användbar för tidigare TODO
     description = data.get('Description')
     
-    with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
 
         cur.execute('''SELECT Logged_in FROM users 
@@ -31,7 +31,7 @@ def delete_comment():
     username = data.get('Username')
     comment_id = data.get('Comment_ID')
     
-    with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
     
     

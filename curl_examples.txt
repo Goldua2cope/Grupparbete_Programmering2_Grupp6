@@ -1,0 +1,17 @@
+curl -X GET http://localhost:5000/session_data -b cookies.txt
+
+
+curl -X POST http://localhost:5000/register -H "Content-Type: application/json" -d '{"Username": "Annie", "Password": "Test"}'
+
+curl -X POST http://localhost:5000/login -H "Content-Type: application/json" -d '{"Username": "Annie", "Password": "Test"}' -b cookies.txt -c cookies.txt
+
+curl -X POST http://localhost:5000/logout -H "Content-Type: application/json" -d '{"Username": "Annie"}' -b cookies.txt -c cookies.txt 
+
+
+curl -X POST http://localhost:5000/post -H "Content-Type: application/json" -d '{"Post_title": "Socrates"}' -b cookies.txt
+
+curl -X GET http://localhost:5000/post -H "Content-Type: application/json" -d '{"Post_ID": 1}' -b cookies.txt
+
+curl -X PUT http://localhost:5000/post -H "Content-Type: application/json" -d '{"Post_ID": 1, "Description": "greek philosophy"}' -b cookies.txt
+
+curl -X DELETE http://localhost:5000/post -H "Content-Type: application/json" -d '{"Post_ID": 1}' -b cookies.txt
