@@ -1,14 +1,18 @@
 from flask import Flask, jsonify, request ,session 
 import sqlite3
-import user
-import posts
-import comments
+from . import user
+from . import posts
+from . import comments
+from datetime import timedelta
 
 app = Flask(__name__)
-app.secret_key = 'gruppuppgiftgrupp6'
+app.secret_key = 'kok_kok_332__30'
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 
 # Creates database with all information about user and posts
 def init_db():
+
     con = sqlite3.connect('blogs.db')
     cursor = con.cursor()
     cursor.execute('''
@@ -23,7 +27,7 @@ def init_db():
                    Post_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                    User_ID INTEGER NOT NULL, 
                    Post_title TEXT NOT NULL,
-                   Description TEXT,
+                   Post_Description TEXT,
                    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                    FOREIGN KEY(User_ID) REFERENCES users(User_ID)
                    )                  
@@ -33,7 +37,7 @@ def init_db():
                    Comment_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                    User_ID INTEGER NOT NULL, 
                    Post_ID INTEGER NOT NULL,
-                   Description TEXT NOT NULL,
+                   Comment_Description TEXT NOT NULL,
                    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                    FOREIGN KEY(Post_ID) REFERENCES posts(Post_ID),
                    FOREIGN KEY(User_ID) REFERENCES users(User_ID)
@@ -62,15 +66,19 @@ def logout():
 def add_post():
     return posts.add_post()
 
-@app.route('/post', methods=['DELETE'])
+@app.route('/posts', methods=['GET'])
+def all_posts():
+    return posts.get_all_posts()
+
+@app.route('/post/delete', methods=['DELETE'])
 def delete_post():
     return posts.delete_post()
-
+        
 @app.route('/comment', methods=['POST'])
 def add_comment():
     return comments.add_comment()
 
-@app.route('/comment', methods=['DELETE'])
+@app.route('/comment/delete', methods=['DELETE'])
 def delete_comment():
     return comments.delete_comment()
 
