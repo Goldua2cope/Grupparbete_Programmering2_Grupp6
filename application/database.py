@@ -34,34 +34,3 @@ def init_db():
 ''')
     con.commit()
     con.close()
-
-def posts_and_comments():
-    with sqlite3.connect('blogg_data.db') as con:
-        con.row_factory = sqlite3.Row
-        cur = con.cursor()
-        posts_and_comments = cur.execute('''SELECT users.Username,
-                                         posts.Post_ID, posts.Post_title, posts.Post_description, posts.Post_created_at, 
-                                         comments.Comment_ID, comments.Comment_description, comments.Comment_created_at
-                                         FROM posts
-                                         LEFT JOIN comments on posts.Post_ID = comments.Post_ID
-                                         LEFT JOIN users on posts.User_ID = users.User_ID
-                                         ORDER BY posts.Post_created_at
-                                        ''').fetchall()
-        
-        for post in posts_and_comments:
-            print(dict(post))
-
-def get_post(post_id):
-    with sqlite3.connect('blogg_data.db') as con:
-        con.row_factory = sqlite3.Row
-        cur = con.cursor()
-        post = cur.execute('''SELECT posts.Post_ID, posts.Post_title, posts.Post_description, posts.Post_created_at,
-                    users.Username
-                    From posts
-                    Join users ON posts.User_ID = users.User_ID
-                    WHERE posts.Post_ID = ?
-                    ''', (post_id,)).fetchone()
-
-        print(dict(post))
-
-get_post(2)
