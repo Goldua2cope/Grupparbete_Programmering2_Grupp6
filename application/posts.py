@@ -1,55 +1,108 @@
-from flask import jsonify, request , session
-from app import app
+from flask import jsonify
 import sqlite3
 
+def posts_and_comments()-> list[dict]:
+    """ 
+    Hämtar alla inlägg med tillhörande kommentarer från databasen.
+    Returnerar en lista av inlägg där varje inlägg är en dictionary
+    som innehåller inläggets information och en lista av dess kommentarer..
+    """
 
-# TODO: SKRIVA UT ALLA KOMMENTARER OCKSÅ
-
-def home():
-    con = sqlite3.connect('blogs.db')
-    cur = con.cursor()
-    posts = cur.execute('''SELECT Post_title, User_ID, Description, Created_at FROM posts 
-                        JOIN users ON posts.User_ID = users.User_ID''').fetchall()
-    con.close()
-    return jsonify(posts), 200
-
-def add_post():
-    if 'username' not in session:
-        return jsonify({'Error': 'You have to be logged in to crate a post.'}), 400
-     
-    data = request.get_json()
-    title = data.get('Post_title')
-    description = data.get('Description')
-    
-    with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
+        result = []
+        
+        posts = cur.execute('''SELECT Post_ID, Post_title, Post_description, Post_created_at FROM posts''').fetchall()
+        for post in posts:
+            current_post = {
+                'Post_ID': post[0],
+                'Post_title': post[1],
+                'Post_description': post[2],
+                'Post_created_at': post[3],
+                'Comments': []
+            }
+            comments = cur.execute('''SELECT Comment_ID, Comment_description, Comment_created_at FROM comments WHERE Post_ID = ?''', (post[0],)).fetchall()
+            for comment in comments:
+                current_post['Comments'].append({
+                    'Comment_ID': comment[0],
+                    'Comment_description': comment[1],
+                    'Comment_created_at': comment[2]
+                })
+            result.append(current_post)
 
+    return result
 
-        cur.execute('''INSERT INTO posts (Post_title, Description) 
-                        VALUES (?, ?)''', 
-                        (title, description))
+def get_post(post_id: int) -> dict | None:
+    """
+    Hämtar ett specifikt inlägg med dess kommentarer baserat på inläggets ID.
+    Returnerar en dictionary med inläggets information och tillhörande kommentarer,
+    eller None om inlägget inte hittas
+    """
+    with sqlite3.connect('blogg_data.db') as con:
+        cur = con.cursor()
+        post = cur.execute('SELECT * FROM posts WHERE Post_ID = ?', (post_id,)).fetchone()
+        
+        if post is None:
+            return None
+        
+        found_post = {
+            'Post_ID': post[0],
+            'Post_title': post[2],
+            'Post_description': post[3],
+            'Post_created_at': post[4],
+            "Comments": []
+        }
+        comments = cur.execute('SELECT * FROM comments WHERE Post_ID = ?', (post_id,)).fetchall()
+        for comment in comments:
+            found_post['Comments'].append({
+                'Comment_ID': comment[0],
+                'Comment_description': comment[3],
+                'Comment_created_at': comment[4]
+            })
+    return found_post
+
+def add_post(user_id: int, title: str, post_description: str) -> int:
+    """
+    Lägger till ett nytt inlägg i databasen.
+    Returnerar ID för det nyligen skapade inlägget.
+    """
+
+    with sqlite3.connect('blogg_data.db') as con:
+        cur = con.cursor()
+        cur.execute('''INSERT INTO posts (User_ID, Post_title, Post_description) 
+                        VALUES (?, ?, ?)''', 
+                        (user_id, title, post_description))
         con.commit()
-        return jsonify({'Message': 'Your post has been created successfully.'}), 201
-
-# TODO: LÄGG TILL CONDITIONS ATT ANVÄNDAREN BARA FÅ TA BORT SINA POSTS
-
-def delete_post():
-    if 'username' not in session:
-        return jsonify({'Error': 'You must be logged in to delete a post.'}) , 400
-
-    data = request.get_json()
-    post_id = data.get('Post_ID')
-
-    with sqlite3.connect('blogs.db') as con:
+    return cur.lastrowid
+        
+def update_post(user_id: int, post_id: int, post_description: str) -> bool:
+    """
+    Uppdaterar beskrivningen av ett specifikt inlägg.
+    Returnerar True om uppdateringen lyckades, annars False.
+    """
+    with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
+        cur.execute('''UPDATE posts 
+                    SET Post_description = ? 
+                    WHERE Post_ID = ? AND User_ID = ?
+                    ''', (post_description, post_id, user_id))
+        con.commit()
+        if cur.rowcount == 0:
+            return False
+    return True
 
-        cur.execute('SELECT Post_ID FROM posts WHERE Username = ?', (session['username'],))
-        user_result = cur.fetchone()
-
-        if user_result == None:
-            return jsonify({'Error':'Post not found'}) , 404
-        else:
-            cur.execute('DELETE FROM posts WHERE Post_ID = ?', (post_id))
-            con.commit()
-            return jsonify({'Message': 'Your post has been delected.'}), 200
-   
+def delete_post(user_id: int, post_id: int) -> bool:
+    """
+    Raderar ett specifikt inlägg och alla dess tillhörande kommentarer.
+    Returnerar True om raderingen lyckades, annars False.
+    """
+    with sqlite3.connect('blogg_data.db') as con:
+        cur = con.cursor()
+        deleted_posts = cur.execute('''DELETE FROM posts
+                    WHERE Post_ID = ? AND User_ID = ?''', 
+                    (post_id, user_id)).rowcount
+        cur.execute('''DELETE FROM comments WHERE Post_ID = ?''', (post_id,))
+        con.commit()
+        if deleted_posts == 0:
+            return False
+    return True
