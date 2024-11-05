@@ -11,15 +11,6 @@ app = Flask(__name__)
 # Sätter en hemlignyckel för sessionhantering
 app.secret_key = 'VerySTRONGPassword'
 
-
-
-@app.route('/session_data')
-def session_data():
-    """Visar aktuell sessionsdata."""
-
-    print(session)
-    return jsonify(dict(session))
-
 # Hemrutt där alla inlägg och dess kommentarer visas
 @app.route('/', methods=['GET'])
 def home():
@@ -89,7 +80,7 @@ def post():
         return jsonify({'Error': 'Bad request.'}), 400
 
     post_title = data.get('Post_title')
-    post_description = data.get('Description')
+    post_description = data.get('Post_description')
     post_id = data.get('Post_ID')
     
     if request.method == 'POST':

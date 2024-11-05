@@ -12,21 +12,24 @@ def posts_and_comments()-> list[dict]:
         cur = con.cursor()
         result = []
         
-        posts = cur.execute('''SELECT Post_ID, Post_title, Post_description, Post_created_at FROM posts''').fetchall()
+        posts = cur.execute('''SELECT Post_ID, Post_title, Post_description, Post_created_at, User_ID FROM posts''').fetchall()
         for post in posts:
             current_post = {
                 'Post_ID': post[0],
+                'User_ID': post[4],
                 'Post_title': post[1],
                 'Post_description': post[2],
                 'Post_created_at': post[3],
-                'Comments': []
+                'comments': []
             }
-            comments = cur.execute('''SELECT Comment_ID, Comment_description, Comment_created_at FROM comments WHERE Post_ID = ?''', (post[0],)).fetchall()
+            comments = cur.execute('''SELECT Comment_ID, Comment_description, Comment_created_at, User_ID FROM comments WHERE Post_ID = ?''', 
+                                   (post[0],)).fetchall()
             for comment in comments:
-                current_post['Comments'].append({
-                    'Comment_ID': comment[0],
-                    'Comment_description': comment[1],
-                    'Comment_created_at': comment[2]
+                current_post['comments'].append({
+                    'comment_ID': comment[0],
+                    'comment_description': comment[1],
+                    'comment_created_at': comment[2],
+                    'User_ID': comment[3]
                 })
             result.append(current_post)
 
@@ -50,11 +53,11 @@ def get_post(post_id: int) -> dict | None:
             'Post_title': post[2],
             'Post_description': post[3],
             'Post_created_at': post[4],
-            "Comments": []
+            'comments': []
         }
         comments = cur.execute('SELECT * FROM comments WHERE Post_ID = ?', (post_id,)).fetchall()
         for comment in comments:
-            found_post['Comments'].append({
+            found_post['comments'].append({
                 'Comment_ID': comment[0],
                 'Comment_description': comment[3],
                 'Comment_created_at': comment[4]
