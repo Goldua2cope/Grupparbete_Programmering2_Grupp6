@@ -1,46 +1,36 @@
-from flask import jsonify, request
+from flask import jsonify
 import sqlite3
+from user import get_user_id
 
-# TODO: ADD CONDITION FOR CHECKING IF POST EXISTS
+def add_comment(post_id: int, comment_description: str, user_id: int) -> int:
+    """
+    Lägger till en ny kommentar till ett specifikt inlägg i databasen 
+    Ansluter till databasen, infogar en ny rad i 'comments'-tabellen med:
+    Post-ID för inlägget som kommentaren tillhör, Användar-ID för den som skapar kommentaren och kommentartext. 
+    Sparar ändringen och returnerar ID för den skapade kommentaren. 
+    """
 
-def add_comment():
-    data = request.get_json()
-    username = data.get('Username')
-    title = data.get('Post_title') # TODO: användbar för tidigare TODO
-    description = data.get('Description')
-    
-    with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogg_data.db') as con:  
         cur = con.cursor()
+        cur.execute('''INSERT INTO comments (Post_ID, User_ID, Comment_description) 
+                    VALUES (?, ?, ?)''', 
+                    (post_id, user_id, comment_description))
+        con.commit()
+        return cur.lastrowid    # Returnerar ID för den skapade kommentaren
 
-        cur.execute('''SELECT Logged_in FROM users 
-                    Where Username = ?''', (username,))
-    
-    # If match is a tuple (1,0) which means logged in
-        if cur.fetchone() == (1,):
-            cur.execute('INSERT INTO comments (Description) VALUES (?, ?)', (description))
-            con.commit()
-            return jsonify({'Message': 'Your comment has been added.'}), 201
-        else:
-            return jsonify({'Error': 'You have to be logged in to create a comment.'}), 400
+def delete_comment(user_id: int, comment_id: int) -> bool:
+    """
+    Raderar en kommentar 
+    Använder ett SQL-kommando som säkerställer att en kommentar raderas endast av den inloggade användaren som skapat kommentaren, 
+    genom matchning av kommentarens- och användarens ID
+    Returnerar True om raderingen lyckades, annars False 
+    """
 
-
-# TODO: LÄGG TILL CONDITIONS ATT ANVÄNDAREN BARA FÅ TA BORT SINA COMMENTS OCH OM DEN EXISTERAR
-
-def delete_comment():
-    data = request.get_json()
-    username = data.get('Username')
-    comment_id = data.get('Comment_ID')
-    
-    with sqlite3.connect('blogs.db') as con:
+    with sqlite3.connect('blogg_data.db') as con:
         cur = con.cursor()
-    
-    
-        cur.execute('''SELECT Logged_in FROM users 
-                    Where Username = ?''', (username,))
-    
-        if cur.fetchone() == (1,):
-            cur.execute('DELETE FROM posts WHERE Comment_ID = (?)', (comment_id))
-            con.commit()
-            return jsonify({'Message': 'Your comment has been delected.'}), 200
-        else:
-            return jsonify({'Error': 'You must be logged in to delete a comments.'})
+        cur.execute('DELETE FROM comments WHERE Comment_ID = ? AND User_ID = ?', 
+                    (comment_id, user_id))
+        con.commit()
+        if cur.rowcount == 0:
+            return False
+    return True # Returnerar True om raderingen lyckas
