@@ -1,4 +1,3 @@
-from flask import jsonify
 import sqlite3
 
 def register(username: str, password: str) -> None:

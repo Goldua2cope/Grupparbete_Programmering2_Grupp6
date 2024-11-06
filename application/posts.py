@@ -1,4 +1,3 @@
-from flask import jsonify
 import sqlite3
 
 def posts_and_comments()-> list[dict]:
