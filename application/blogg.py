@@ -25,11 +25,14 @@ def register():
 
     data = request.get_json(silent=True)
     if data is None:
-        return jsonify({'Error': 'Invalid request.'}), 400
+        return jsonify({'Error': 'Bad request.'}), 400
     
     username = data.get('Username')
     password = data.get('Password')
 
+    if not username or not password:
+        return jsonify({'Bad request': 'Missing Username or Password.'}), 400
+    
     try:
         user.register(username, password)
         return jsonify({'Message': 'User successfully created.'}), 201
@@ -85,7 +88,7 @@ def post():
     
     if request.method == 'POST':
         if not post_title or not post_description:
-            return jsonify({'Error': 'Bad request: Missing title or description.'}), 400
+            return jsonify({'Error': 'Bad request: Missing Post_title or Post_description.'}), 400
         if not user.check_login(session):
             return jsonify({'Error': 'You have to be logged in for this function.'}), 401
         try:
@@ -96,12 +99,18 @@ def post():
             return jsonify({'Error': f'Bad request: {e}'}), 400
         
     if request.method == 'GET':
+        if not post_id:
+            return jsonify({'Bad request':'Missing Post_ID.'}), 400
+        
         post = posts.get_post(post_id)
         if post is None:
             return jsonify({'Error': 'Post not found.'}), 404         
         return jsonify(post), 200 
 
     if request.method == 'PUT':
+        if not post_id or not post_description:
+            return jsonify({'Bad request': 'Missing Post_ID or Post_description.'}), 400
+        
         if not user.check_login(session):
             return jsonify({'Error': 'Unauthorized: You must login first.'}), 401
        
@@ -126,12 +135,14 @@ def comment():
     if data is None:
         return jsonify({'Error': 'Bad request.'}), 400
     
-    data = request.get_json()
     user_id = session.get('user_id')
 
     if request.method == 'POST':
         post_id = data.get('Post_ID')
         comment_description = data.get('Comment_description')
+
+        if not post_id or not comment_description:
+            return jsonify({'Bad request': 'Missing Comment_description or Post_ID.'}), 400
         
         if posts.get_post(post_id) is None:
             return jsonify({'Error': 'Post not found.'}), 404
@@ -149,6 +160,9 @@ def comment():
     if request.method == 'DELETE':
         comment_id = data.get('Comment_ID')
 
+        if not comment_id:
+            return jsonify({'Bad request': 'Missing Comment_ID.'}), 400
+        
         if not user.check_login(session):
             return jsonify({'Error': 'You have to be logged in for this function.'}), 401
 

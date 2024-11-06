@@ -58,9 +58,9 @@ def get_post(post_id: int) -> dict | None:
         comments = cur.execute('SELECT * FROM comments WHERE Post_ID = ?', (post_id,)).fetchall()
         for comment in comments:
             found_post['comments'].append({
-                'Comment_ID': comment[0],
-                'Comment_description': comment[3],
-                'Comment_created_at': comment[4]
+                'comment_ID': comment[0],
+                'comment_description': comment[3],
+                'comment_created_at': comment[4]
             })
     return found_post
 
