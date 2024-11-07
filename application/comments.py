@@ -1,5 +1,4 @@
 import sqlite3
-from user import get_user_id
 
 def add_comment(post_id: int, comment_description: str, user_id: int) -> int:
     """
