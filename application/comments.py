@@ -1,4 +1,3 @@
-from flask import jsonify
 import sqlite3
 from user import get_user_id
 
